@@ -30,7 +30,7 @@ class MusicService:
     async def get_band(self, band_id: int) -> Band:
         """Get a band by ID with its musicians."""
         band = await self.session.scalar(
-            select(Band).options(selectinload(Band.musicians)).where(Band.id == band_id)
+            select(Band).options(selectinload(Band.musicians)).where(Band.id == band_id)  # type: ignore[arg-type]
         )
         if not band:
             raise NotFoundError(f"Band with ID {band_id} not found")
@@ -40,7 +40,7 @@ class MusicService:
         self, skip: int = 0, limit: int = 100, genre: str | None = None
     ) -> list[Band]:
         """Get all bands with optional filtering."""
-        query = select(Band).options(selectinload(Band.musicians))
+        query = select(Band).options(selectinload(Band.musicians))  # type: ignore[arg-type]
 
         if genre:
             query = query.where(Band.genre == genre)

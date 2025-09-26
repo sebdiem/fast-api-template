@@ -120,7 +120,7 @@ class SQLModelFaker:
             annotation = getattr(finfo, "annotation", None) or getattr(
                 finfo, "outer_type_", None
             )
-            optional, inner = self._is_optional(annotation)
+            _optional, inner = self._is_optional(annotation)
 
             # Try field-name generator first (email, name, etc.)
             g = self._by_field_name(f"{model.__name__}.{name}") or self._by_field_name(
