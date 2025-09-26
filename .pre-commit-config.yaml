@@ -1,0 +1,10 @@
+repos:
+  - repo: https://github.com/sebdiem/sub-pre-commit.git
+    rev: v4.3.0
+    hooks:
+      - id: sub-pre-commit
+        alias: backend
+        name: "pre-commit for ./back"
+        args: ["-p", "back"]
+        files: "^back/.*"
+        stages: ["pre-commit"]

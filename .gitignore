@@ -1,0 +1,54 @@
+.env*
+!.env.dist
+!.env.test
+
+# Frontend generated files
+node_modules/
+.next/
+out/
+.cache/
+.turbo/
+dist/
+storybook-static/
+*.log
+.DS_Store
+*.local
+.vite/
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+.build/
+dist/
+wheels/
+*.egg-info
+.langgraph*
+
+# Virtual environments
+.venv
+
+# Sam deployments
+.aws-sam
+
+# dbs
+*.sqlite
+
+# local todo file
+todo
+
+# Backend static folder
+back/src/garage/static
+
+# Snowflake creds. 
+.snowflake/
+front/package-lock.json
