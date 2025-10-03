@@ -1,3 +1,7 @@
+PROJECT_NAME ?= fast_api_template
+DB_SERVICE   ?= postgres
+DB_VOLUME    ?= postgres_data
+
 install:  ## Install dependencies
 	cp -n .env.dist .env || true
 	uv sync
@@ -10,14 +14,18 @@ test:  ## Run the tests
 	uv run pytest -v
 
 db:  ## Start a contenerized database
-	docker compose up postgres -d
+	docker compose -p $(PROJECT_NAME) up -d $(DB_SERVICE)
 
 db-clean:  ## Stop the contenerized database
-	@echo "Cleaning database..."
-	docker compose down postgres
-	docker volume prune -f
+	@echo "Cleaning $(DB_SERVICE) data..."
+	docker compose -p $(PROJECT_NAME) stop $(DB_SERVICE)
+	docker compose -p $(PROJECT_NAME) rm -f $(DB_SERVICE)
+	# Remove the named volume (project-scoped): <project>_<volume>
+	docker volume rm $(PROJECT_NAME)_$(DB_VOLUME) || true
 
-db-reset: db-reset db  ## Reset the database to an empty state
+db-reset: db-clean db  ## Reset the database to an empty state
+	@echo "Sleeping for 5 sec to let docker container initialize"
+	@sleep 5
 	@echo "Resetting database..."
 	uv run init-db
 

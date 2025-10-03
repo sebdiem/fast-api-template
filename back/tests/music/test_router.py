@@ -1,13 +1,11 @@
 """Tests for music domain API endpoints."""
 
-import pytest
 from httpx import AsyncClient
 
 from tests.core.factories.base import SQLModelFaker
 from tests.music.factories import create_band, create_musician
 
 
-@pytest.mark.asyncio
 async def test_create_band(http_client: AsyncClient):
     """Test creating a band via API."""
     band_data = {
@@ -28,7 +26,6 @@ async def test_create_band(http_client: AsyncClient):
     assert "id" in data
 
 
-@pytest.mark.asyncio
 async def test_get_bands(http_client: AsyncClient, factory: SQLModelFaker):
     """Test getting bands via API."""
     await create_band(factory, name="The Beatles", genre="Rock")
@@ -44,7 +41,6 @@ async def test_get_bands(http_client: AsyncClient, factory: SQLModelFaker):
     assert "Led Zeppelin" in band_names
 
 
-@pytest.mark.asyncio
 async def test_get_band_by_id(http_client: AsyncClient, factory: SQLModelFaker):
     """Test getting a specific band by ID."""
     band = await create_band(factory, name="The Beatles")
@@ -57,7 +53,6 @@ async def test_get_band_by_id(http_client: AsyncClient, factory: SQLModelFaker):
     assert data["name"] == "The Beatles"
 
 
-@pytest.mark.asyncio
 async def test_update_band(http_client: AsyncClient, factory: SQLModelFaker):
     """Test updating a band."""
     band = await create_band(factory, name="The Beatles", genre="Rock")
@@ -71,7 +66,6 @@ async def test_update_band(http_client: AsyncClient, factory: SQLModelFaker):
     assert data["name"] == "The Beatles"  # unchanged
 
 
-@pytest.mark.asyncio
 async def test_delete_band(http_client: AsyncClient, factory: SQLModelFaker):
     """Test deleting a band."""
     band = await create_band(factory, name="The Beatles")
@@ -84,7 +78,6 @@ async def test_delete_band(http_client: AsyncClient, factory: SQLModelFaker):
     assert response.status_code == 404
 
 
-@pytest.mark.asyncio
 async def test_create_musician(http_client: AsyncClient, factory: SQLModelFaker):
     """Test creating a musician via API."""
     band = await create_band(factory, name="The Beatles")
@@ -104,7 +97,6 @@ async def test_create_musician(http_client: AsyncClient, factory: SQLModelFaker)
     assert data["band_id"] == band.id
 
 
-@pytest.mark.asyncio
 async def test_get_musicians_by_band(http_client: AsyncClient, factory: SQLModelFaker):
     """Test filtering musicians by band."""
     band1 = await create_band(factory, name="The Beatles")
@@ -125,14 +117,12 @@ async def test_get_musicians_by_band(http_client: AsyncClient, factory: SQLModel
     assert "Robert Plant" not in musician_names
 
 
-@pytest.mark.asyncio
 async def test_band_not_found(http_client: AsyncClient):
     """Test getting a non-existent band returns 404."""
     response = await http_client.get("/api/music/bands/999999")
     assert response.status_code == 404
 
 
-@pytest.mark.asyncio
 async def test_create_duplicate_band(http_client: AsyncClient, factory: SQLModelFaker):
     """Test that creating a duplicate band returns conflict error."""
     await create_band(factory, name="The Beatles")

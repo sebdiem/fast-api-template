@@ -5,23 +5,31 @@ description = "FastAPI template with domain-driven architecture"
 readme = "README.md"
 requires-python = ">=3.11.9"
 dependencies = [
-    "python-dotenv>=1.1.0",
-    "fastapi[standard]>=0.115.12",
-    "sqlmodel>=0.0.24",
     "alembic>=1.14.0",
+    "alembic_postgresql_enum>=1.8.0",
     "asyncpg>=0.30.0",
-    "sqlalchemy[asyncio]>=2.0.0",
+    "fastapi[standard]>=0.115.12",
+    "psycopg[pool]>=3.2.9",
     "pydantic>=2.0.0",
+    "python-dotenv>=1.1.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "sqlmodel>=0.0.24",
 ]
 
 [dependency-groups]
 dev = [
-    "click>=8.1.8",
-    "ruff>=0.8.0",
-    "pytest>=8.4.0",
-    "pytest-asyncio>=1.1.0",
+    # binary psycopg in dev
+    "psycopg[pool,binary]>=3.2.9",
+
+    # test utils
     "faker>=37.6.0",
+    "pytest-asyncio>=1.1.0",
+    "pytest-socket>=0.7.0",  # prevent external http connections in tests
+    "pytest>=8.4.0",
+
+    # lint and code-quality
     "mypy>=1.17.1",
+    "ruff>=0.8.0",
 ]
 
 [project.scripts]

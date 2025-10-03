@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class MusicianBase(BaseModel):
@@ -20,8 +20,7 @@ class Musician(MusicianBase):
     id: int
     band_id: int | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BandBase(BaseModel):
@@ -46,5 +45,4 @@ class Band(BandBase):
     id: int
     musicians: list[Musician] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

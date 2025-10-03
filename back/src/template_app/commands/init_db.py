@@ -1,12 +1,16 @@
 """Script to initialize and set up PostgreSQL instance for SQLModel tables."""
 
 import logging
+import os
 import subprocess
 import sys
 import traceback
 from pathlib import Path
 
-import click
+import psycopg.errors
+import sqlalchemy
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import ProgrammingError
 
 from template_app.core import config
 
@@ -41,7 +45,25 @@ def get_alembic_config_dir() -> Path:
     return local_dev_path
 
 
-def setup_database(db_uri: str) -> bool:
+def create_database_if_not_exists(postgres_db_uri: str, database_name: str):
+    engine = create_engine(postgres_db_uri)
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        try:
+            conn.execute(text(f'CREATE DATABASE "{database_name}"'))
+        except ProgrammingError as e:
+            if isinstance(e.orig, psycopg.errors.DuplicateDatabase):
+                logger.info(f"{database_name} already exists")
+                return True
+            logger.error(f"❌ failed to create database {database_name}")
+            return False
+        except Exception:
+            logger.error(f"❌ failed to create database {database_name}")
+            return False
+    logger.info(f"Created database {database_name}")
+    return True
+
+
+def run_migrations(db_uri: str) -> bool:
     """Set up the PostgreSQL database using Alembic migrations."""
     try:
         # Setup SQLModel tables using Alembic migrations
@@ -55,11 +77,14 @@ def setup_database(db_uri: str) -> bool:
             cwd=alembic_dir,
             capture_output=True,
             text=True,
+            env={**os.environ, "POSTGRESQL_URL": db_uri},
         )
 
         if result.returncode != 0:
-            logger.error(f"❌ Failed to run Alembic migrations: {result.stderr}")
+            logger.error(f"❌ Failed to run Alembic migrations:\n{result.stderr}")
             return False
+        else:
+            logger.info(result.stdout)
 
         logger.info("✅ Database setup completed successfully")
         return True
@@ -73,13 +98,26 @@ def init_db():
     """Initialize PostgreSQL database for the template application."""
     logger.info("🚀 Starting PostgreSQL initialization...")
 
-    if not setup_database(config.POSTGRESQL_URL):
+    db_url_string = config.POSTGRESQL_URL
+    if db_url_string.startswith("postgresql://"):
+        db_url_string = "postgresql+psycopg://" + db_url_string[len("postgresql://") :]
+
+    db_url = sqlalchemy.engine.url.make_url(db_url_string)
+    if not db_url.database:
+        raise DBInitError("⚠️ Could not setup database: no target database found")
+
+    postgres_db_uri = db_url.set(database="postgres")
+    if not create_database_if_not_exists(
+        postgres_db_uri.render_as_string(hide_password=False), db_url.database
+    ):
+        raise DBInitError("⚠️ Could not create database")
+
+    if not run_migrations(db_url_string):
         raise DBInitError("⚠️ Could not setup database")
 
     logger.info("🎉 Database initialization completed successfully!")
 
 
-@click.command()
 def main():
     try:
         init_db()

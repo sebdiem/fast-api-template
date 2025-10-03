@@ -84,8 +84,8 @@ def create_db(request):
     """Fixture that ensures a fresh test database exists, yields its URL, and drops it after."""
 
     url = config.POSTGRESQL_URL
-    if url.startswith("postgresql:"):
-        url = url.replace("postgresql:", "postgresql+psycopg:")
+    if url.startswith("postgresql://"):
+        url = "postgresql+psycopg://" + url[len("postgresql://") :]
     db_name = make_url(url).database
     maintenance_db = make_url(url).set(
         database="postgres"

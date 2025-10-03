@@ -1,14 +1,43 @@
+import importlib
+import logging
+from pathlib import Path
 from logging.config import fileConfig
 
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
 
-# Import models here to ensure they are registered with SQLModel
-from template_app.music.models import Band, Musician
-from template_app.core.database.models import BaseModel
 from sqlmodel import SQLModel
+
+logger = logging.getLogger(__name__)
+
+load_dotenv()
+
+
+def import_db_modules():
+    root_path = (Path(__file__).parent.parent / "src").resolve()
+
+    imported = set()
+
+    for path, dirnames, filenames in root_path.walk():
+        # If this directory contains a db.py file, import it as a module.
+        if "models.py" in filenames:
+            file_path = path / "models.py"
+            module = ".".join(file_path.relative_to(root_path).with_suffix("").parts)
+            if module and module not in imported:
+                importlib.import_module(module)
+                imported.add(module)
+    if not imported:
+        logger.warning("No models.py found, no migration could be generated")
+    else:
+        imported_models = "\n".join(sorted(imported))
+        logger.info(f"The following models were imported:\n{imported_models}")
+
+
+import_db_modules()
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -34,7 +63,11 @@ target_metadata = SQLModel.metadata
 def get_url():
     import os
 
-    return os.getenv("POSTGRESQL_URL", config.get_main_option("sqlalchemy.url"))
+    db_url = os.getenv("POSTGRESQL_URL")
+    assert db_url, "Please specify POSTGRESQL_URL env var"
+    if db_url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + db_url[len("postgresql://") :]
+    return db_url
 
 
 def run_migrations_offline() -> None:
