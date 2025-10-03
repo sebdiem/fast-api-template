@@ -1,3 +1,13 @@
+# ruff: noqa: E402
+
+import os
+import sys
+
+assert "garage.config" not in sys.modules, (
+    "Including any module above this line will break config loading in tests."
+)
+os.environ["IS_PYTEST_RUNNING"] = "true"
+
 import logging
 import os
 import random

@@ -1,54 +1,42 @@
+# env files: keep only .env.dist and .env.test
 .env*
 !.env.dist
 !.env.test
 
-# Frontend generated files
-node_modules/
-.next/
-out/
-.cache/
-.turbo/
-dist/
-storybook-static/
-*.log
+# OS/Editor directories and files
+*.njsproj
+*.ntvs*
+*.sln
+*.suo
+*.sw?
 .DS_Store
-*.local
-.vite/
-
-# Editor directories and files
 .idea/
 .vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+
+# Frontend generated files
+*.local
+*.log
+.cache/
+.next/
+.turbo/
+.vite/
+dist/
+node_modules/
+storybook-static/
 
 # Python-generated files
-__pycache__/
+*.egg-info
 *.py[oc]
-build/
 .build/
+.langgraph*
+.venv/
+__pycache__/
+build/
 dist/
 wheels/
-*.egg-info
-.langgraph*
-
-# Virtual environments
-.venv
-
-# Sam deployments
-.aws-sam
 
 # dbs
 *.sqlite
 
 # local todo file
 todo
-
-# Backend static folder
-back/src/garage/static
-
-# Snowflake creds. 
-.snowflake/
-front/package-lock.json
