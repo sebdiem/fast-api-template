@@ -49,12 +49,13 @@ fast_api_template/
 │   ├── pyproject.toml             # Dependencies & tooling config
 │   ├── .pre-commit-config.yaml    # Backend-specific hooks
 │   ├── Makefile                   # Development commands
-│   ├── docker-compose.yml         # PostgreSQL for development
 │   ├── alembic.ini                # Migration configuration
 │   ├── .env.dist                  # Environment template
 │   └── .env.test                  # Test environment config
 ├── .pre-commit-config.yaml        # Root-level pre-commit config
-└── README.md                      # This file
+├── README.md                      # This file
+├── docker/                        # docker files
+└── docker-compose.yml             # docker dev services
 ```
 
 ## Quick Start
@@ -62,7 +63,7 @@ fast_api_template/
 ### Prerequisites
 
 - Python 3.11+
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+- [uv](https://docs.astral.sh/uv/)
 - Docker and Docker Compose
 - PostgreSQL (via Docker)
 
@@ -76,35 +77,25 @@ fast_api_template/
 
 2. **Install dependencies**:
    ```bash
-   uv sync
-   # or with pip: pip install -e .
+   make install
    ```
 
 3. **Set up environment**:
    ```bash
-   cp .env.dist .env
-   # Edit .env with your configuration
+   # Edit back/.env with your configuration
    ```
 
-4. **Start the database**:
+4. **Start the dev environment (database & backend)**:
    ```bash
-   make db
-   # or: docker compose up postgres -d
+   cd back && make dev
    ```
 
-5. **Initialize the database**:
+5. **Reset the database**:
    ```bash
-   uv run init-db
-   # or: make migrate
+   make db-reset
    ```
 
-6. **Run the development server**:
-   ```bash
-   make dev-backend
-   # or: uv run fastapi dev src/template_app/main.py
-   ```
-
-7. **Visit the API**:
+6. **Visit the API**:
    - API: http://localhost:8000
    - Health check: http://localhost:8000/health
    - Interactive docs: http://localhost:8000/docs
@@ -115,16 +106,6 @@ fast_api_template/
 
 ```bash
 make help                 # Show all available commands
-make dev                  # Start database and backend
-make test                 # Run tests
-make test-coverage        # Run tests with coverage
-make lint                 # Run linting
-make format               # Format code
-make type-check           # Run type checks
-make check                # Run all checks (lint, type-check, test)
-make migrate              # Run database migrations
-make create-migration     # Create new migration
-make reset-db             # Reset database and run migrations
 ```
 
 ### Testing
@@ -139,9 +120,6 @@ The template includes comprehensive testing infrastructure:
 ```bash
 # Run all tests
 make test
-
-# Run with coverage
-make test-coverage
 
 # Run specific test file
 uv run pytest tests/music/test_router.py -v
@@ -159,14 +137,8 @@ The template enforces code quality through:
 - **Pre-commit hooks**: Automated checks on commit
 
 ```bash
-# Set up pre-commit hooks
-make install-pre-commit
-
-# Run all code quality checks
-make check
-
-# Format code
-make format
+# Set up and run pre-commit hooks
+make pre-commit
 ```
 
 ### Database Migrations
@@ -175,11 +147,11 @@ Create and run migrations with Alembic:
 
 ```bash
 # Create a new migration
-make create-migration
+make db-create-migration
 # Follow the prompt to enter a migration message
 
 # Run migrations
-make migrate
+make db-migrate
 
 # Reset database (useful in development)
 make reset-db
@@ -268,7 +240,7 @@ To add a new domain (e.g., `products`):
 
 6. **Generate migration**:
    ```bash
-   make create-migration
+   make db-create-migration
    # Enter: "Add products domain"
    ```
 
@@ -326,14 +298,6 @@ For production deployment:
 5. Configure proper CORS origins
 6. Run migrations: `uv run init-db`
 7. Use a production ASGI server like Gunicorn with Uvicorn workers
-
-## Contributing
-
-1. Follow the established patterns in the music domain
-2. Add tests for new functionality
-3. Run `make check` before committing
-4. Use conventional commit messages
-5. Update documentation as needed
 
 ## License
 
