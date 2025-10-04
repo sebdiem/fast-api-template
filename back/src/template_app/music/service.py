@@ -29,23 +29,31 @@ class MusicService:
         await self.session.refresh(band, ["memberships"])
         return band
 
-    async def get_band(self, band_id: int) -> Band:
+    async def get_band(self, band_id: int, with_musicians: bool = True) -> Band:
         """Get a band by ID with its musicians."""
-        band = await self.session.scalar(
-            select(Band)
-            .options(selectinload(Band.memberships))  # type: ignore[arg-type]
-            .where(Band.id == band_id)
-        )
+        query = select(Band)
+        if with_musicians:
+            query = query.options(
+                selectinload(Band.memberships).selectinload(BandMembership.musician)  # type: ignore[arg-type]
+            )
+        band = await self.session.scalar(query.where(Band.id == band_id))
         if not band:
             raise NotFoundError(f"Band with ID {band_id} not found")
         return band
 
     async def get_bands(
-        self, skip: int = 0, limit: int = 100, genre: str | None = None
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        genre: str | None = None,
+        with_musicians: bool = True,
     ) -> list[Band]:
         """Get all bands with optional filtering."""
-        query = select(Band).options(selectinload(Band.memberships))  # type: ignore[arg-type]
-
+        query = select(Band)
+        if with_musicians:
+            query = query.options(
+                selectinload(Band.memberships).selectinload(BandMembership.musician)  # type: ignore[arg-type]
+            )
         if genre:
             query = query.where(Band.genre == genre)
 
@@ -55,7 +63,7 @@ class MusicService:
 
     async def update_band(self, band_id: int, band_data: schemas.BandUpdate) -> Band:
         """Update a band."""
-        band = await self.session.scalar(select(Band).where(Band.id == band_id))
+        band = await self.get_band(band_id=band_id)
         if not band:
             raise NotFoundError(f"Band with ID {band_id} not found")
 
@@ -63,9 +71,6 @@ class MusicService:
         for field, value in update_data.items():
             setattr(band, field, value)
 
-        await self.session.flush()
-        # Refresh to get relationships loaded
-        await self.session.refresh(band, ["memberships"])
         return band
 
     async def delete_band(self, band_id: int) -> None:

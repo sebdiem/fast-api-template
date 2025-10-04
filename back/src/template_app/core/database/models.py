@@ -1,12 +1,17 @@
 from datetime import datetime
 
 from sqlalchemy import func
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlmodel import Field, SQLModel
 
 from template_app.core.database.base import now_factory
 
 
-class TimestampMixin(SQLModel):
+class Base(AsyncAttrs, SQLModel):
+    pass
+
+
+class TimestampMixin(Base):
     """Mixin for adding timestamps to models."""
 
     created_at: datetime = Field(

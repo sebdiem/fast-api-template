@@ -14,11 +14,29 @@ from tests.core.factories.base import UNSET, SQLModelFaker, UnsetType
 logger = logging.getLogger(__name__)
 
 
+MusicianWithInstrument = tuple[Musician, MusicInstrument]
+
+
+async def associate_musicians_to_band(
+    factory, band: Band, musicians: list[MusicianWithInstrument]
+) -> list[BandMembership]:
+    memberships = []
+    for musician, instrument in musicians:
+        link = await factory.create(
+            BandMembership,
+            band_id=band.id,
+            musician_id=musician.id,
+            instrument=instrument,
+        )
+        memberships.append(link)
+    return memberships
+
+
 async def create_band(
     factory: SQLModelFaker,
     name: str | UnsetType = UNSET,
     genre: MusicGenre | UnsetType = UNSET,
-    musicians: list[tuple[Musician, MusicInstrument]] | UnsetType = UNSET,
+    musicians: list[MusicianWithInstrument] | UnsetType = UNSET,
 ) -> Band:
     """Create a test band with realistic data."""
     factory.register("Band.name", factory.fake.company)
@@ -28,30 +46,23 @@ async def create_band(
 
     band = await factory.create(Band, name=name, genre=genre)
 
-    async def _associate_musicians(n: int):
-        # Create musicians sequentially to avoid session conflicts
-        musicians = []
+    async def _create_musicians_with_instruments(
+        n: int,
+    ) -> list[tuple[Musician, MusicInstrument]]:
+        musicians: list[Musician] = []
         for _ in range(n):
             musician = await create_musician(factory)
             musicians.append(musician)
-
-        # Create memberships sequentially
         instruments = factory.fake.random_choices(MusicInstrument, length=n)
-        for i, musician in enumerate(musicians):
-            await factory.create(
-                BandMembership,
-                band_id=band.id,
-                musician_id=musician.id,
-                instrument=instruments[i],
-            )
+        return list(zip(musicians, instruments, strict=True))
 
     match musicians:
         case UnsetType():
-            await _associate_musicians(n=4)
-        case []:
-            # Don't create any musicians when empty list is provided
-            pass
+            musicians_ = await _create_musicians_with_instruments(n=4)
+        case _:
+            musicians_ = musicians
 
+    await associate_musicians_to_band(factory, band, musicians_)
     return band
 
 

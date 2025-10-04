@@ -25,6 +25,7 @@ async def test_create_band(http_client: AsyncClient):
     assert data["formed_year"] == 1960
     assert data["country"] == "UK"
     assert "id" in data
+    assert data["memberships"] == []
 
 
 async def test_get_bands(http_client: AsyncClient, factory: SQLModelFaker):

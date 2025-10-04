@@ -205,9 +205,7 @@ class SQLModelFaker:
         Returns:
             List of persisted model instances
         """
-        shared_overrides = {
-            k: v for k, v in shared_overrides.items() if v is not UNSET
-        }
+        shared_overrides = {k: v for k, v in shared_overrides.items() if v is not UNSET}
         instances = []
         for _ in range(count):
             instance = self.build(model, **shared_overrides)

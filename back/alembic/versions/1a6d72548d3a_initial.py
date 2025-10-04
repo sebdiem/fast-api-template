@@ -1,8 +1,8 @@
 """initial
 
-Revision ID: 92d0d4a281f7
+Revision ID: 1a6d72548d3a
 Revises:
-Create Date: 2025-10-04 10:44:00.998478
+Create Date: 2025-10-05 01:08:40.949633
 
 """
 
@@ -14,7 +14,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = "92d0d4a281f7"
+revision: str = "1a6d72548d3a"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -62,11 +62,6 @@ def upgrade() -> None:
     op.create_index(op.f("ix_musician_name"), "musician", ["name"], unique=False)
     op.create_table(
         "bandmembership",
-        sa.Column(
-            "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column("updated_at", sa.DateTime(), nullable=True),
-        sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("band_id", sa.Integer(), nullable=False),
         sa.Column("musician_id", sa.Integer(), nullable=False),
         sa.Column(
@@ -91,8 +86,7 @@ def upgrade() -> None:
             ["musician_id"],
             ["musician.id"],
         ),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("band_id", "musician_id", name="_band_musician_uc"),
+        sa.PrimaryKeyConstraint("band_id", "musician_id"),
     )
     # ### end Alembic commands ###
 

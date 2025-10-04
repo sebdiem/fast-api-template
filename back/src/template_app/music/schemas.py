@@ -13,6 +13,12 @@ class MusicianUpdate(BaseModel):
     name: str | None = None
 
 
+class Musician(MusicianBase):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class BandMembershipBase(BaseModel):
     instrument: str
 
@@ -23,15 +29,7 @@ class BandMembershipCreate(BandMembershipBase):
 
 
 class BandMembership(BandMembershipBase):
-    id: int
-    band_id: int
-    musician_id: int
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class Musician(MusicianBase):
-    id: int
+    musician: Musician
 
     model_config = ConfigDict(from_attributes=True)
 
