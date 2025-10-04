@@ -3,22 +3,35 @@ from pydantic import BaseModel, ConfigDict
 
 class MusicianBase(BaseModel):
     name: str
-    instrument: str
 
 
 class MusicianCreate(MusicianBase):
-    band_id: int | None = None
+    pass
 
 
 class MusicianUpdate(BaseModel):
     name: str | None = None
-    instrument: str | None = None
-    band_id: int | None = None
+
+
+class BandMembershipBase(BaseModel):
+    instrument: str
+
+
+class BandMembershipCreate(BandMembershipBase):
+    band_id: int
+    musician_id: int
+
+
+class BandMembership(BandMembershipBase):
+    id: int
+    band_id: int
+    musician_id: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Musician(MusicianBase):
     id: int
-    band_id: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -43,6 +56,6 @@ class BandUpdate(BaseModel):
 
 class Band(BandBase):
     id: int
-    musicians: list[Musician] = []
+    memberships: list[BandMembership] = []
 
     model_config = ConfigDict(from_attributes=True)

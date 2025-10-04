@@ -9,7 +9,7 @@ from pathlib import Path
 
 import psycopg.errors
 import sqlalchemy
-from sqlalchemy import create_engine, text
+from sqlalchemy import NullPool, create_engine, text
 from sqlalchemy.exc import ProgrammingError
 
 from template_app.core import config
@@ -46,20 +46,25 @@ def get_alembic_config_dir() -> Path:
 
 
 def create_database_if_not_exists(postgres_db_uri: str, database_name: str):
-    engine = create_engine(postgres_db_uri)
-    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-        try:
-            conn.execute(text(f'CREATE DATABASE "{database_name}"'))
-        except ProgrammingError as e:
-            if isinstance(e.orig, psycopg.errors.DuplicateDatabase):
-                logger.info(f"{database_name} already exists")
-                return True
-            logger.error(f"❌ failed to create database {database_name}")
-            return False
-        except Exception:
-            logger.error(f"❌ failed to create database {database_name}")
-            return False
-    logger.info(f"Created database {database_name}")
+    engine = create_engine(postgres_db_uri, poolclass=NullPool)
+    try:
+        with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            try:
+                conn.execute(text(f'CREATE DATABASE "{database_name}"'))
+            except ProgrammingError as e:
+                if isinstance(e.orig, psycopg.errors.DuplicateDatabase):
+                    logger.info(f"{database_name} already exists")
+                else:
+                    logger.error(f"❌ failed to create database {database_name}")
+                    raise
+            except Exception:
+                logger.error(f"❌ failed to create database {database_name}")
+                raise
+        logger.info(f"Created database {database_name}")
+    except Exception:
+        return False
+    finally:
+        engine.dispose()
     return True
 
 

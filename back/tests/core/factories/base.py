@@ -2,8 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import date, datetime
+from enum import StrEnum
 from types import UnionType
-from typing import Any, ClassVar, Optional, Protocol, TypeVar, get_args, get_origin
+from typing import (
+    Any,
+    Optional,
+    Protocol,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 from uuid import uuid4
 
 from faker import Faker
@@ -14,17 +22,25 @@ from sqlmodel import SQLModel
 T = TypeVar("T", bound=SQLModel)
 
 
-class NotSet:
-    _singleton: ClassVar[NotSet | None] = None
+class UnsetType:
+    """To be used in function definition to distinguish between user provided or default value.
 
-    def __new__(cls):
-        if cls._singleton is None:
-            new = super().__new__(cls)
-            cls._singleton = new
-        return cls._singleton
+    Example usage:
+    ```
+        def my_function(arg: None | UnsetType = UNSET): ...
+    ```
+    """
 
-    def __bool__(self):
-        return False
+    __slots__ = ()
+
+    def __eq__(self, value: object, /) -> bool:
+        return value is UnsetType
+
+    def __repr__(self) -> str:
+        return "UNSET"
+
+
+UNSET = UnsetType()
 
 
 class ModelBuilder(Protocol):
@@ -46,8 +62,8 @@ class SQLModelFaker:
         generators: Map of (python_type or field_name) -> callable returning a value.
     """
 
-    def __init__(self, fake: Faker, session: AsyncSession | None):
-        self.fake = fake
+    def __init__(self, fake: Faker | None = None, session: AsyncSession | None = None):
+        self.fake = fake or Faker()
         self.session = session
         # type-based generators
         self.generators: dict[Any, Callable[[], Any]] = {
@@ -62,6 +78,7 @@ class SQLModelFaker:
         self.generators["email"] = self.fake.unique.email
         self.generators["name"] = self.fake.name
         self.generators["full_name"] = self.fake.name
+        self.generators["country"] = self.fake.country
         self.generators["uuid"] = lambda: str(uuid4())
         self.generators["id"] = (
             self.fake.random_int
@@ -85,6 +102,16 @@ class SQLModelFaker:
     def _by_type(self, pytype: Any) -> Callable[[], Any] | None:
         if pytype in self.generators:
             return self.generators[pytype]
+        if issubclass(pytype, StrEnum):
+            return lambda: self.fake.enum(pytype)
+        try:
+            from pydantic import EmailStr
+
+            if pytype is EmailStr:
+                return self.fake.unique.email
+        except Exception:
+            pass
+
         return None
 
     def build(self, model: type[T], /, **overrides: Any) -> T:
@@ -132,7 +159,10 @@ class SQLModelFaker:
                     finfo, "type_", None
                 )
                 g = self._by_type(inner or pytype)
-
+            if not g:
+                # Try by faker name
+                if hasattr(self.fake, name):
+                    g = getattr(self.fake, name)
             if g:
                 values[name] = g()
             else:
@@ -155,7 +185,7 @@ class SQLModelFaker:
         Returns:
             Persisted model instance with database-generated fields populated
         """
-        overrides = {k: v for k, v in overrides.items() if v is not NotSet()}
+        overrides = {k: v for k, v in overrides.items() if v is not UNSET}
         instance = self.build(model, **overrides)
         if self.session is not None:
             self.session.add(instance)
@@ -176,7 +206,7 @@ class SQLModelFaker:
             List of persisted model instances
         """
         shared_overrides = {
-            k: v for k, v in shared_overrides.items() if v is not NotSet()
+            k: v for k, v in shared_overrides.items() if v is not UNSET
         }
         instances = []
         for _ in range(count):

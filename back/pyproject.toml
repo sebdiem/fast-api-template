@@ -49,7 +49,6 @@ testpaths = [
 ]
 filterwarnings = [
     "error", # treat all warnings as errors
-    "ignore:unclosed.*:ResourceWarning", # ignore unclosed resource warnings during test cleanup
 ]
 asyncio_mode = "auto"
 addopts = "--disable-socket --allow-unix-socket --allow-hosts=127.0.0.1,localhost,::1"

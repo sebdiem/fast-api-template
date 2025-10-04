@@ -18,7 +18,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import create_engine, event, text
+from sqlalchemy import NullPool, create_engine, event, text
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -90,7 +90,7 @@ def create_db(request):
     maintenance_db = make_url(url).set(
         database="postgres"
     )  # this db is used to perform the drop / createdb operations
-    engine = create_engine(maintenance_db)
+    engine = create_engine(maintenance_db, poolclass=NullPool)
 
     if not db_name or not (db_name.endswith("_test") or db_name.startswith("test_")):
         raise RuntimeError(
@@ -145,7 +145,7 @@ async def engine(init_db, request):
     # Enable SQL logging based on pytest verbosity level
     # -v or higher enables SQL logging
     verbose = request.config.getoption("verbose") >= 1
-    engine = create_async_engine(init_db, future=True, echo=verbose)
+    engine = create_async_engine(init_db, future=True, echo=verbose, poolclass=NullPool)
 
     # Add event listener to count queries
     @event.listens_for(engine.sync_engine, "before_execute")

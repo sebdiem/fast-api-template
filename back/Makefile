@@ -21,7 +21,7 @@ db-clean:  ## Stop the contenerized database
 	docker compose -p $(PROJECT_NAME) stop $(DB_SERVICE)
 	docker compose -p $(PROJECT_NAME) rm -f $(DB_SERVICE)
 	# Remove the named volume (project-scoped): <project>_<volume>
-	docker volume rm $(PROJECT_NAME)_$(DB_VOLUME) || true
+	docker volume rm $(PROJECT_NAME)_$(DB_VOLUME)
 
 db-reset: db-clean db  ## Reset the database to an empty state
 	@echo "Sleeping for 5 sec to let docker container initialize"

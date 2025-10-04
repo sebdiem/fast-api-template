@@ -16,7 +16,11 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-def import_db_modules():
+def import_models():
+    """Walk through the src folder to find models.py files.
+
+    In our convention, this is where you place your SQLModel definitions.
+    """
     root_path = (Path(__file__).parent.parent / "src").resolve()
 
     imported = set()
@@ -36,7 +40,7 @@ def import_db_modules():
         logger.info(f"The following models were imported:\n{imported_models}")
 
 
-import_db_modules()
+import_models()
 
 
 # this is the Alembic Config object, which provides
