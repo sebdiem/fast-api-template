@@ -30,14 +30,20 @@ class BandMembership(SQLModel, table=True):
     musician_id: int = Field(foreign_key="musician.id", primary_key=True)
     instrument: MusicInstrument
 
-    band: "Band" = Relationship(back_populates="memberships")
-    musician: "Musician" = Relationship(back_populates="memberships")
+    band: "Band" = Relationship(
+        back_populates="memberships",
+        sa_relationship_kwargs={"lazy": "joined"},
+    )
+    musician: "Musician" = Relationship(
+        back_populates="memberships",
+        sa_relationship_kwargs={"lazy": "joined"},
+    )
 
 
 class Band(BaseModel, table=True):
     """A music band with musicians."""
 
-    name: str = Field(index=True)
+    name: str = Field(index=True, unique=True)
     genre: MusicGenre
     formed_year: int | None = None
     country: str | None = None
