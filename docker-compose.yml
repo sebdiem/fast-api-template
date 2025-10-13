@@ -18,7 +18,6 @@ services:
     build:
       context: .
       dockerfile: docker/back.Dockerfile
-    container_name: template_app
     restart: unless-stopped
     # Read environment variables from .env file
     env_file:

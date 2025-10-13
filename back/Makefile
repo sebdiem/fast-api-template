@@ -1,6 +1,8 @@
-PROJECT_NAME ?= fast_api_template
-DB_SERVICE   ?= postgres
-DB_VOLUME    ?= postgres_data
+PROJECT_NAME  ?= fast_api_template
+DB_SERVICE    ?= postgres
+DB_VOLUME     ?= postgres_data
+POSTGRES_USER ?= user
+POSTGRES_DB   ?= template_app
 
 install:  ## Install dependencies
 	cp -n .env.dist .env || true
@@ -32,6 +34,9 @@ db-reset: db-clean db  ## Reset the database to an empty state
 db-migrate:  ## Migrate the database to the latest migration
 	@echo "Running database migrations..."
 	alembic upgrade head
+
+db-psql-session:  ## Start a psql shell
+	docker compose exec -it $(DB_SERVICE) psql -U $(POSTGRES_USER) $(POSTGRES_DB)
 
 db-create-migration: ## Sync alembic with model changes
 	@echo "Creating new migration..."
