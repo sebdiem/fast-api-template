@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextlib import asynccontextmanager
 from datetime import date, datetime
 from enum import StrEnum
 from types import UnionType
@@ -65,6 +66,7 @@ class SQLModelFaker:
     def __init__(self, fake: Faker | None = None, session: AsyncSession | None = None):
         self.fake = fake or Faker()
         self.session = session
+        self._batch_flush_depth = 0  # Track nesting depth of batch_flush contexts
         # type-based generators
         self.generators: dict[Any, Callable[[], Any]] = {
             int: self.fake.pyint,
@@ -175,6 +177,38 @@ class SQLModelFaker:
 
         return model(**values)  # type: ignore[arg-type]
 
+    @asynccontextmanager
+    async def batch_flush(self):
+        """Context manager to batch multiple create operations with a single flush.
+
+        When used, disables individual flushes in create/create_multiple methods
+        and performs a single flush when the context exits.
+
+        Supports nesting - only the outermost context manager will perform the flush.
+
+        Example:
+            async with factory.batch_flush():
+                band1 = await factory.create(Band, name="The Beatles")
+                band2 = await factory.create(Band, name="Pink Floyd")
+                async with factory.batch_flush():  # Nested - no flush on exit
+                    band3 = await factory.create(Band, name="Led Zeppelin")
+                # Single flush happens here on outermost exit
+        """
+        if self.session is None:
+            yield
+            return
+
+        # Increment nesting depth
+        self._batch_flush_depth += 1
+        try:
+            yield
+        finally:
+            # Decrement depth
+            self._batch_flush_depth -= 1
+            # Only flush if we're exiting the outermost context
+            if self._batch_flush_depth == 0:
+                await self.session.flush()
+
     async def create(self, model: type[T], **overrides: Any) -> T:
         """Build and persist a SQLModel instance to the database.
 
@@ -189,7 +223,9 @@ class SQLModelFaker:
         instance = self.build(model, **overrides)
         if self.session is not None:
             self.session.add(instance)
-            await self.session.flush()
+            # Only flush if not in batch mode
+            if self._batch_flush_depth == 0:
+                await self.session.flush()
         return instance
 
     async def create_multiple(
@@ -213,7 +249,8 @@ class SQLModelFaker:
             if self.session:
                 self.session.add(instance)
 
-        if self.session:
+        # Only flush if not in batch mode
+        if self.session and self._batch_flush_depth == 0:
             await self.session.flush()
 
         return instances

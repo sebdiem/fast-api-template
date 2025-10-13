@@ -44,8 +44,6 @@ async def create_band(
         "Band.formed_year", lambda: factory.fake.random_int(min=1960, max=2020)
     )
 
-    band = await factory.create(Band, name=name, genre=genre)
-
     async def _create_musicians_with_instruments(
         n: int,
     ) -> list[tuple[Musician, MusicInstrument]]:
@@ -56,13 +54,15 @@ async def create_band(
         instruments = factory.fake.random_choices(MusicInstrument, length=n)
         return list(zip(musicians, instruments, strict=True))
 
-    match musicians:
-        case UnsetType():
-            musicians_ = await _create_musicians_with_instruments(n=4)
-        case _:
-            musicians_ = musicians
-
-    await associate_musicians_to_band(factory, band, musicians_)
+    async with factory.batch_flush():
+        band = await factory.create(Band, name=name, genre=genre)
+        match musicians:
+            case UnsetType():
+                musicians_ = await _create_musicians_with_instruments(n=4)
+            case _:
+                musicians_ = musicians
+        await associate_musicians_to_band(factory, band, musicians_)
+    await band.awaitable_attrs.memberships
     return band
 
 
@@ -76,7 +76,7 @@ async def create_musician(
     musician = await factory.create(Musician, name=name)
 
     # Create band membership if band is provided
-    if band is not UNSET and band is not None:
+    if not isinstance(band, UnsetType) and band is not None:
         instrument_value = (
             instrument
             if instrument is not UNSET
@@ -88,5 +88,4 @@ async def create_musician(
             musician_id=musician.id,
             instrument=instrument_value,
         )
-
     return musician
