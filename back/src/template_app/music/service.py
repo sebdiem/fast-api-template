@@ -1,5 +1,7 @@
+from advanced_alchemy.exceptions import DuplicateKeyError
+from advanced_alchemy.filters import LimitOffset
+from advanced_alchemy.repository import SQLAlchemyAsyncRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 from sqlmodel import col, select
 
 from template_app.core.exceptions import ConflictError, NotFoundError
@@ -7,36 +9,38 @@ from template_app.music import schemas
 from template_app.music.models import Band, BandMembership, Musician
 
 
+class BandRepository(SQLAlchemyAsyncRepository[Band]):  # type: ignore
+    model_type = Band
+
+
+class MusicianRepository(SQLAlchemyAsyncRepository[Musician]):  # type: ignore
+    model_type = Musician
+
+
+class BandMembershipRepository(SQLAlchemyAsyncRepository[BandMembership]):  # type: ignore
+    model_type = BandMembership
+
+
 class MusicService:
     """Service layer for music domain operations."""
 
     def __init__(self, session: AsyncSession):
         self.session = session
+        self.band_repository = BandRepository(session=session, auto_refresh=False)
 
     async def create_band(self, band_data: schemas.BandCreate) -> Band:
         """Create a new band."""
-        # Check if band already exists
-        existing_band = await self.session.scalar(
-            select(Band).where(Band.name == band_data.name)
-        )
-        if existing_band:
-            raise ConflictError(f"Band '{band_data.name}' already exists")
-
         band = Band(**band_data.model_dump())
-        self.session.add(band)
-        await self.session.flush()
-        # Refresh to get relationships loaded
-        await self.session.refresh(band, ["memberships"])
+        try:
+            await self.band_repository.add(band)
+        except DuplicateKeyError as e:
+            raise ConflictError() from e
+        await band.awaitable_attrs.memberships
         return band
 
-    async def get_band(self, band_id: int, with_musicians: bool = True) -> Band:
+    async def get_band(self, band_id: int) -> Band:
         """Get a band by ID with its musicians."""
-        query = select(Band)
-        if with_musicians:
-            query = query.options(
-                selectinload(Band.memberships).selectinload(BandMembership.musician)  # type: ignore[arg-type]
-            )
-        band = await self.session.scalar(query.where(Band.id == band_id))
+        band = await self.band_repository.get_one_or_none(load=[Band.memberships])  # type: ignore
         if not band:
             raise NotFoundError(f"Band with ID {band_id} not found")
         return band
@@ -45,21 +49,18 @@ class MusicService:
         self,
         skip: int = 0,
         limit: int = 100,
+        offset: int = 0,
         genre: str | None = None,
-        with_musicians: bool = True,
-    ) -> list[Band]:
+    ) -> tuple[list[Band], int]:
         """Get all bands with optional filtering."""
-        query = select(Band)
-        if with_musicians:
-            query = query.options(
-                selectinload(Band.memberships).selectinload(BandMembership.musician)  # type: ignore[arg-type]
-            )
-        if genre:
-            query = query.where(Band.genre == genre)
-
-        query = query.offset(skip).limit(limit)
-        result = await self.session.execute(query)
-        return list(result.scalars().all())
+        filters = {}
+        if genre is not None:
+            filters["genre"] = genre
+        return await self.band_repository.list_and_count(
+            LimitOffset(limit=limit, offset=offset),
+            load=[Band.memberships],  # type: ignore
+            **filters,  # type: ignore
+        )
 
     async def update_band(self, band_id: int, band_data: schemas.BandUpdate) -> Band:
         """Update a band."""
@@ -75,7 +76,7 @@ class MusicService:
 
     async def delete_band(self, band_id: int) -> None:
         """Delete a band and all its memberships."""
-        band = await self.session.scalar(select(Band).where(Band.id == band_id))
+        band = await self.band_repository.get_one_or_none(id=band_id)
         if not band:
             raise NotFoundError(f"Band with ID {band_id} not found")
 

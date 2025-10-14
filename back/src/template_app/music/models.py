@@ -26,8 +26,9 @@ class MusicInstrument(StrEnum):
 
 
 class BandMembership(SQLModel, table=True):
-    band_id: int = Field(foreign_key="band.id", primary_key=True)
-    musician_id: int = Field(foreign_key="musician.id", primary_key=True)
+    id: int = Field(primary_key=True)
+    band_id: int = Field(foreign_key="band.id", index=True, ondelete="CASCADE")
+    musician_id: int = Field(foreign_key="musician.id", index=True, ondelete="CASCADE")
     instrument: MusicInstrument
 
     band: "Band" = Relationship(

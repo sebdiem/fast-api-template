@@ -3,6 +3,21 @@ revision = 3
 requires-python = ">=3.11.9"
 
 [[package]]
+name = "advanced-alchemy"
+version = "1.6.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "alembic" },
+    { name = "greenlet" },
+    { name = "sqlalchemy" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2d/4d/dae5377bf377fecb5e9259b2043aa0ae37d9b63d3f7a4264b7771cb3df22/advanced_alchemy-1.6.3.tar.gz", hash = "sha256:b0ed313c0e1b7ac3c1a9caf8349d1742099b1c1d5f73e8926826da942aa1bf6c", size = 814677, upload-time = "2025-09-19T19:13:32.733Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/02/c1/29cce65b51c6e2fb923d0aa84d1cb1fb438b2b7ca458a0c130dda75e561a/advanced_alchemy-1.6.3-py3-none-any.whl", hash = "sha256:d905f51affb427a13787f4b562d283ee891fc3c3865b5d7869f2f483533f1546", size = 251632, upload-time = "2025-09-19T19:13:30.658Z" },
+]
+
+[[package]]
 name = "alembic"
 version = "1.16.5"
 source = { registry = "https://pypi.org/simple" }
@@ -1014,6 +1029,7 @@ name = "template-app"
 version = "0.1.dev0"
 source = { editable = "." }
 dependencies = [
+    { name = "advanced-alchemy" },
     { name = "alembic" },
     { name = "alembic-postgresql-enum" },
     { name = "asyncpg" },
@@ -1038,6 +1054,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "advanced-alchemy", specifier = ">=1.6.3" },
     { name = "alembic", specifier = ">=1.14.0" },
     { name = "alembic-postgresql-enum", specifier = ">=1.8.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },

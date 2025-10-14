@@ -38,7 +38,8 @@ async def get_bands(
     genre: Annotated[str | None, Query()] = None,
 ):
     """Get all bands with optional filtering by genre."""
-    return await music_service.get_bands(skip=skip, limit=limit, genre=genre)
+    bands, _count = await music_service.get_bands(skip=skip, limit=limit, genre=genre)
+    return bands
 
 
 @router.get("/bands/{band_id}", response_model=schemas.Band)

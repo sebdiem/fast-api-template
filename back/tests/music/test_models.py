@@ -36,6 +36,8 @@ async def test_band_musician_relationship(
     musician = await create_musician(
         factory, name="John Lennon", band=band, instrument=MusicInstrument.GUITAR
     )
+    if factory.session:
+        await factory.session.refresh(band)
 
     # Test that objects were created
     assert band.id is not None

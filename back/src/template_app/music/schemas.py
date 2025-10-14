@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MusicianBase(BaseModel):
@@ -54,6 +54,8 @@ class BandUpdate(BaseModel):
 
 class Band(BandBase):
     id: int
-    memberships: list[BandMembership] = []
+    memberships: list[BandMembership] = Field(
+        default_factory=list, serialization_alias="members"
+    )
 
     model_config = ConfigDict(from_attributes=True)

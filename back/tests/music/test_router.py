@@ -4,6 +4,7 @@ from httpx import AsyncClient
 
 from template_app.music.models import MusicGenre
 from tests.core.factories.base import SQLModelFaker
+from tests.core.utils.db import assert_num_queries
 from tests.music.factories import create_band, create_musician
 
 
@@ -16,7 +17,8 @@ async def test_create_band(http_client: AsyncClient):
         "country": "UK",
     }
 
-    response = await http_client.post("/api/music/bands", json=band_data)
+    with assert_num_queries(2):
+        response = await http_client.post("/api/music/bands", json=band_data)
     assert response.status_code == 200
 
     data = response.json()
@@ -25,34 +27,46 @@ async def test_create_band(http_client: AsyncClient):
     assert data["formed_year"] == 1960
     assert data["country"] == "UK"
     assert "id" in data
-    assert data["memberships"] == []
+    assert data["members"] == []
 
 
 async def test_get_bands(http_client: AsyncClient, factory: SQLModelFaker):
     """Test getting bands via API."""
-    await create_band(factory, name="The Beatles", genre=MusicGenre.ROCK)
-    await create_band(factory, name="Led Zeppelin", genre=MusicGenre.ROCK)
+    async with factory.batch_flush():
+        await create_band(factory, name="The Beatles", genre=MusicGenre.ROCK)
+        await create_band(factory, name="Led Zeppelin", genre=MusicGenre.ROCK)
+        await create_band(factory, name="Miles Davis", genre=MusicGenre.JAZZ)
 
-    response = await http_client.get("/api/music/bands")
+    with assert_num_queries(2):
+        response = await http_client.get("/api/music/bands")
     assert response.status_code == 200
 
     data = response.json()
-    assert len(data) == 2
+    assert len(data) == 3
     band_names = [band["name"] for band in data]
     assert "The Beatles" in band_names
     assert "Led Zeppelin" in band_names
+    assert "Miles Davis" in band_names
+
+    with assert_num_queries(2):
+        response = await http_client.get("/api/music/bands?genre=JAZZ")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
 
 
 async def test_get_band_by_id(http_client: AsyncClient, factory: SQLModelFaker):
     """Test getting a specific band by ID."""
     band = await create_band(factory, name="The Beatles")
 
-    response = await http_client.get(f"/api/music/bands/{band.id}")
+    with assert_num_queries(2):
+        response = await http_client.get(f"/api/music/bands/{band.id}")
     assert response.status_code == 200
 
     data = response.json()
     assert data["id"] == band.id
     assert data["name"] == "The Beatles"
+    assert len(data["members"]) == len(band.memberships)
 
 
 async def test_update_band(http_client: AsyncClient, factory: SQLModelFaker):
