@@ -61,8 +61,8 @@ class MusicService:
             filters["genre"] = genre
         return await self.band_repository.list_and_count(
             LimitOffset(limit=limit, offset=offset),
-            load=[Band.memberships],  # type: ignore
-            **filters,  # type: ignore
+            load=[Band.memberships],  # type: ignore[arg-type]
+            **filters,  # type: ignore[arg-type]
         )
 
     async def update_band(self, band_id: int, band_data: schemas.BandUpdate) -> Band:
