@@ -1,7 +1,7 @@
 # ===========================
 # Backend build stage
 # ===========================
-FROM 3.12.0-slim-bullseye AS backend-build
+FROM python:3.12.0-slim-bullseye AS backend-build
 
 WORKDIR /app
 
