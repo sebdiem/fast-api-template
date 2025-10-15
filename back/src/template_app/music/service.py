@@ -6,7 +6,7 @@ from sqlmodel import col, select
 
 from template_app.core.exceptions import ConflictError, NotFoundError
 from template_app.music import schemas
-from template_app.music.models import Band, BandMembership, Musician
+from template_app.music.models import Band, BandMembership, MusicGenre, Musician
 
 
 class BandRepository(SQLAlchemyAsyncRepository[Band]):  # type: ignore
@@ -52,7 +52,7 @@ class MusicService:
         self,
         skip: int = 0,
         limit: int = 100,
-        genre: str | None = None,
+        genre: MusicGenre | None = None,
     ) -> tuple[list[Band], int]:
         """Get all bands with optional filtering."""
         filters = {}

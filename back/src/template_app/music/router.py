@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from template_app.core.database import get_session
 from template_app.music import schemas
+from template_app.music.models import MusicGenre
 from template_app.music.service import MusicService
 
 router = APIRouter(prefix="/api/music", tags=["music"])
@@ -35,7 +36,7 @@ async def get_bands(
     music_service: MusicServiceDep,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=1000)] = 100,
-    genre: Annotated[str | None, Query()] = None,
+    genre: Annotated[MusicGenre | None, Query()] = None,
 ):
     """Get all bands with optional filtering by genre."""
     bands, _count = await music_service.get_bands(skip=skip, limit=limit, genre=genre)

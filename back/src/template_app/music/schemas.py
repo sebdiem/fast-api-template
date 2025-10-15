@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
+from template_app.music.models import MusicGenre, MusicInstrument
+
 
 class MusicianBase(BaseModel):
     name: str
@@ -20,7 +22,7 @@ class Musician(MusicianBase):
 
 
 class BandMembershipBase(BaseModel):
-    instrument: str
+    instrument: MusicInstrument
 
 
 class BandMembershipCreate(BandMembershipBase):
@@ -36,7 +38,7 @@ class BandMembership(BandMembershipBase):
 
 class BandBase(BaseModel):
     name: str
-    genre: str
+    genre: MusicGenre
     formed_year: int | None = None
     country: str | None = None
 
