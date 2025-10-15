@@ -52,7 +52,6 @@ class MusicService:
         self,
         skip: int = 0,
         limit: int = 100,
-        offset: int = 0,
         genre: str | None = None,
     ) -> tuple[list[Band], int]:
         """Get all bands with optional filtering."""
@@ -60,7 +59,7 @@ class MusicService:
         if genre is not None:
             filters["genre"] = genre
         return await self.band_repository.list_and_count(
-            LimitOffset(limit=limit, offset=offset),
+            LimitOffset(limit=limit, offset=skip),
             load=[Band.memberships],  # type: ignore[arg-type]
             **filters,  # type: ignore[arg-type]
         )

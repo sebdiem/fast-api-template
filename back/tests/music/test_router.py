@@ -55,6 +55,21 @@ async def test_get_bands(http_client: AsyncClient, factory: SQLModelFaker):
     assert len(data) == 1
 
 
+async def test_get_bands_pagination(http_client: AsyncClient, factory: SQLModelFaker):
+    """Test pagination parameters when listing bands."""
+    async with factory.batch_flush():
+        await create_band(factory, name="The Beatles", genre=MusicGenre.ROCK)
+        await create_band(factory, name="Led Zeppelin", genre=MusicGenre.ROCK)
+        await create_band(factory, name="Pink Floyd", genre=MusicGenre.ROCK)
+
+    response = await http_client.get("/api/music/bands", params={"skip": 1, "limit": 1})
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    # With deterministic creation order, the paginated result should be the second band
+    assert data[0]["name"] == "Led Zeppelin"
+
+
 async def test_get_band_by_id(http_client: AsyncClient, factory: SQLModelFaker):
     """Test getting a specific band by ID."""
     band = await create_band(factory, name="The Beatles")
