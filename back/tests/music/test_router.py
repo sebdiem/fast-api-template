@@ -69,6 +69,23 @@ async def test_get_band_by_id(http_client: AsyncClient, factory: SQLModelFaker):
     assert len(data["members"]) == len(band.memberships)
 
 
+async def test_get_band_by_id_returns_correct_band(
+    http_client: AsyncClient, factory: SQLModelFaker
+):
+    """Ensure retrieving a band by ID returns the matching band even when multiples exist."""
+    first_band = await create_band(factory, name="The Beatles")
+    second_band = await create_band(factory, name="Led Zeppelin")
+
+    with assert_num_queries(2):
+        response = await http_client.get(f"/api/music/bands/{second_band.id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == second_band.id
+    assert data["name"] == second_band.name
+    assert data["id"] != first_band.id
+
+
 async def test_update_band(http_client: AsyncClient, factory: SQLModelFaker):
     """Test updating a band."""
     band = await create_band(factory, name="The Beatles", genre=MusicGenre.ROCK)

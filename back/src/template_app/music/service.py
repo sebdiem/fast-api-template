@@ -40,7 +40,10 @@ class MusicService:
 
     async def get_band(self, band_id: int) -> Band:
         """Get a band by ID with its musicians."""
-        band = await self.band_repository.get_one_or_none(load=[Band.memberships])  # type: ignore
+        band = await self.band_repository.get_one_or_none(  # type: ignore[arg-type]
+            id=band_id,
+            load=[Band.memberships],  # type: ignore[arg-type]
+        )
         if not band:
             raise NotFoundError(f"Band with ID {band_id} not found")
         return band
