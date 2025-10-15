@@ -7,15 +7,11 @@ import os
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from template_app.core import config
-from template_app.core.database import (
-    close_db_connections,
-    get_session,
-    init_db_connections,
-)
+from template_app.core.database import close_db_connections, init_db_connections
 from template_app.core.logging_config import setup_logging
 from template_app.music.router import router as music_router
 
@@ -44,7 +40,6 @@ def create_app() -> FastAPI:
         description="FastAPI template with domain-driven architecture",
         version="0.1.0",
         lifespan=lifespan,
-        dependencies=[Depends(get_session)],
     )
 
     app.add_middleware(
